@@ -1,10 +1,11 @@
-const CACHE_NAME = 'kasirkita-pos-v1';
+const CACHE_NAME = 'kasirkita-pos-v2';
 const APP_FILES = [
   './',
   './index.html',
   './receipt-enhancer.js',
   './history-six-months.js',
   './mobile-navigation.js',
+  './nest-menu.js',
   './manifest.webmanifest',
   './icon.svg'
 ];

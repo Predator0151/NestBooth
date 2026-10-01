@@ -10,17 +10,15 @@
   document.querySelectorAll('.method[data-method="Kartu"],.method[data-method="E-Wallet"]').forEach(button => button.remove());
   const queueNameStyle = document.createElement('style'); queueNameStyle.textContent = '.queue-details b,#nowName{display:none!important}'; document.head.appendChild(queueNameStyle);
   const rupiah = value => 'Rp' + Number(value || 0).toLocaleString('id-ID');
-  const drinkStyle = document.createElement('style'); drinkStyle.textContent = '.drink-options{position:fixed;inset:0;z-index:120;background:#071a2c99;display:grid;place-items:center;padding:20px}.drink-options article{width:min(420px,100%);background:#fff;border-radius:12px;padding:22px;color:#172b4d}.drink-options h2{margin:0 0 6px}.drink-options p{color:#718096;margin:0 0 18px}.drink-options label{display:grid;gap:7px;font-weight:700;margin:13px 0}.drink-options select{height:42px;border:1px solid #d8e1eb;border-radius:8px;padding:0 10px;font:inherit}.drink-actions{display:flex;gap:9px;margin-top:20px}.drink-actions button{flex:1;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer}.drink-add{background:#14b87a;color:#fff}.drink-cancel{background:#edf2f7;color:#334e68}';document.head.appendChild(drinkStyle);
-  function addDrinkToCart(index, sugar, ice) { const variant = `Gula ${sugar} • Es ${ice}`; let entry = cart.find(item => item.i === index && item.variant === variant); if (entry) entry.q++; else cart.push({i:index,q:1,variant}); renderCart(); }
-  function showDrinkOptions(index) { document.getElementById('drinkOptions')?.remove(); const product = products[index]; const dialog = document.createElement('div'); dialog.id = 'drinkOptions'; dialog.className = 'drink-options'; dialog.innerHTML = `<article><h2>${safe(product[0])}</h2><p>Pilih level gula dan es.</p><label>Level gula<select id="drinkSugar"><option>0%</option><option>30%</option><option selected>50%</option><option>100%</option></select></label><label>Level es<select id="drinkIce"><option>30%</option><option selected>50%</option><option>100%</option></select></label><div class="drink-actions"><button class="drink-cancel">Batal</button><button class="drink-add">Tambahkan</button></div></article>`; document.body.appendChild(dialog); dialog.querySelector('.drink-cancel').onclick=()=>dialog.remove();dialog.querySelector('.drink-add').onclick=()=>{addDrinkToCart(index,dialog.querySelector('#drinkSugar').value,dialog.querySelector('#drinkIce').value);dialog.remove()}; }
-  const baseAdd = add; add = function(index) { if (products[index]?.[1] === 'Minuman') showDrinkOptions(index); else baseAdd(index); };
+  // Minuman langsung masuk ke keranjang tanpa pilihan level gula atau es.
+  cart.forEach(item => delete item.variant);
   change = function(index, delta, encodedVariant = '') { const variant = decodeURIComponent(encodedVariant || ''); const entry = cart.find(item => item.i === index && (item.variant || '') === variant); if (!entry) return; entry.q += delta; if (entry.q < 1) cart = cart.filter(item => item !== entry); renderCart(); };
   /* Perbaikan tampilan pajak kasir: jangan gunakan nama variabel yang sama dengan elemen #tax. */
   renderCart = function () {
-    const subtotalAmount = cart.reduce((total, entry) => total + products[entry.i][2] * entry.q, 0);
+    const subtotalAmount = cart.reduce((total, entry) => total + (entry.unitPrice ?? products[entry.i][2]) * entry.q, 0);
     const taxAmount = Math.round(subtotalAmount * 0.11);
     const totalAmount = subtotalAmount + taxAmount;
-    cartItems.innerHTML = cart.length ? cart.map(entry => `<div class="item"><div><div class="item-name">${products[entry.i][0]}</div>${entry.variant ? `<div class="item-price">${entry.variant}</div>` : ''}<div class="item-price">${rupiah(products[entry.i][2])}</div></div><div class="qty"><button onclick="change(${entry.i},-1,'${encodeURIComponent(entry.variant || '')}')">−</button><b>${entry.q}</b><button onclick="change(${entry.i},1,'${encodeURIComponent(entry.variant || '')}')">+</button></div></div>`).join('') : '<div class="empty">Keranjang masih kosong<br><small>Pilih produk untuk memulai transaksi</small></div>';
+    cartItems.innerHTML = cart.length ? cart.map(entry => `<div class="item"><div><div class="item-name">${products[entry.i][0]}</div>${entry.variant ? `<div class="item-price">${entry.variant}</div>` : ''}<div class="item-price">${rupiah(entry.unitPrice ?? products[entry.i][2])}</div></div><div class="qty"><button onclick="change(${entry.i},-1,'${encodeURIComponent(entry.variant || '')}')">−</button><b>${entry.q}</b><button onclick="change(${entry.i},1,'${encodeURIComponent(entry.variant || '')}')">+</button></div></div>`).join('') : '<div class="empty">Keranjang masih kosong<br><small>Pilih produk untuk memulai transaksi</small></div>';
     document.getElementById('subtotal').textContent = rupiah(subtotalAmount);
     document.getElementById('tax').textContent = rupiah(taxAmount);
     document.getElementById('total').textContent = rupiah(totalAmount);
@@ -84,10 +82,10 @@
   renderQueue();
   const originalPay = confirmPay.onclick;
   confirmPay.onclick = () => {
-    const subtotal = cart.reduce((total, entry) => total + products[entry.i][2] * entry.q, 0);
+    const subtotal = cart.reduce((total, entry) => total + (entry.unitPrice ?? products[entry.i][2]) * entry.q, 0);
     const tax = Math.round(subtotal * 0.11);
     const queueNumber = claimDailyQueueNumber();
-    const data = { items: cart.map(entry => ({name: products[entry.i][0] + (entry.variant ? ' — ' + entry.variant : ''), price: products[entry.i][2], qty: entry.q})), subtotal, tax, taxPercent: subtotal ? Number(((tax / subtotal) * 100).toFixed(1)) : 0, total: window.orderTotal, method, queueNumber, receiptNumber: 'NB'+Date.now().toString().slice(-6), date: new Date().toLocaleString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) };
+    const data = { items: cart.map(entry => ({name: products[entry.i][0] + (entry.variant ? ' — ' + entry.variant : ''), price: entry.unitPrice ?? products[entry.i][2], qty: entry.q})), subtotal, tax, taxPercent: subtotal ? Number(((tax / subtotal) * 100).toFixed(1)) : 0, total: window.orderTotal, method, queueNumber, receiptNumber: 'NB'+Date.now().toString().slice(-6), date: new Date().toLocaleString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) };
     const originalPush = queue.push;
     queue.push = function (entry) { entry.n = queueNumber; entry.name = ''; return originalPush.call(queue, entry); };
     try { originalPay?.call(confirmPay); } finally { queue.push = originalPush; }
