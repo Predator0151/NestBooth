@@ -32,7 +32,7 @@
     document.getElementById('receiptToPrint')?.remove();
     const wrapper = document.createElement('div'); wrapper.id = 'receiptToPrint'; wrapper.className = 'receipt-sheet';
     const lines = data.items.map(item => { const parts = String(item.name).split(' — '); const main = parts.shift(); const variant = parts.join(' — '); const options = variant ? variant.split(' • ').map(option => `<small style="display:block;padding-left:12px">${safe(option)}</small>`).join('') : ''; return `<div class="receipt-line"><span><b>${item.qty} ${safe(main)}</b>${options}</span><b>${rupiah(item.price * item.qty)}</b></div>`; }).join('');
-    wrapper.innerHTML = `<article class="receipt-paper"><h2>NestBooth</h2><p class="sub">Jl. Karya No.A3, Karang Berombak<br>Kec. Medan Bar., Kota Medan<br>Sumatera Utara 20117</p><div class="receipt-meta"><div>NO. ANTRIAN : <b>${safe(data.queueNumber)}</b></div><div>RCPT# : ${safe(data.receiptNumber)}</div><div>TANGGAL : ${safe(data.date)}</div><div>METODE : ${safe(data.method)}</div></div><div class="receipt-lines">${lines}</div><div class="receipt-line"><span>SUBTOTAL</span><span>${rupiah(data.subtotal)}</span></div><div class="receipt-line"><span>PAJAK (${data.taxPercent}%)</span><span>${rupiah(data.tax)}</span></div><div class="receipt-total"><span>TOTAL</span><span>${rupiah(data.total)}</span></div><p class="sub">Terima Kasih<br>Sampai jumpa kembali</p><div class="receipt-actions"><button class="close-receipt">Tutup</button><button class="print-receipt">🖨 Cetak Struk</button></div></article>`;
+    wrapper.innerHTML = `<article class="receipt-paper"><h2>NesBooth</h2><p class="sub">Jl. Karya No.A3, Karang Berombak<br>Kec. Medan Bar., Kota Medan<br>Sumatera Utara 20117</p><div class="receipt-meta"><div>NO. ANTRIAN : <b>${safe(data.queueNumber)}</b></div><div>RCPT# : ${safe(data.receiptNumber)}</div><div>TANGGAL : ${safe(data.date)}</div><div>METODE : ${safe(data.method)}</div></div><div class="receipt-lines">${lines}</div><div class="receipt-line"><span>SUBTOTAL</span><span>${rupiah(data.subtotal)}</span></div><div class="receipt-line"><span>PAJAK (${data.taxPercent}%)</span><span>${rupiah(data.tax)}</span></div><div class="receipt-total"><span>TOTAL</span><span>${rupiah(data.total)}</span></div><p class="sub">Terima Kasih<br>Sampai jumpa kembali</p><div class="receipt-actions"><button class="close-receipt">Tutup</button><button class="print-receipt">🖨 Cetak Struk</button></div></article>`;
     document.body.appendChild(wrapper);
     wrapper.querySelector('.close-receipt').onclick = () => wrapper.remove();
     wrapper.querySelector('.print-receipt').onclick = () => window.print();
@@ -89,6 +89,10 @@
     const originalPush = queue.push;
     queue.push = function (entry) { entry.n = queueNumber; entry.name = ''; return originalPush.call(queue, entry); };
     try { originalPay?.call(confirmPay); } finally { queue.push = originalPush; }
-    if (data.items.length && !cart.length) { saveSale(data); renderDailyTransactions(); renderSixMonthReport(); setTimeout(() => showReceipt(data), 0); }
+    if (data.items.length && !cart.length) {
+      saveSale(data);
+      showReceipt(data);
+      setTimeout(() => { renderDailyTransactions(); renderSixMonthReport(); }, 0);
+    }
   };
 })();

@@ -14,12 +14,20 @@
     'Nescafé Ice Roast': [{label: '1 Shot', price: 5000}, {label: '2 Shot', price: 7000}, {label: '3 Shot', price: 9000}]
   };
 
+  appSettings.storeName = 'NesBooth';
+  localStorage.setItem('kasirkita-settings', JSON.stringify(appSettings));
+  document.querySelector('.brand').childNodes[1].textContent = ' NesBooth';
+  const storeNameInput = document.getElementById('settingStoreName');
+  if (storeNameInput) storeNameInput.value = 'NesBooth';
+
   if (localStorage.getItem('nestbooth-menu-version') !== menuVersion) {
     products.splice(0, products.length, ...nestMenu.map(item => [...item]));
     cart = [];
     localStorage.setItem('kasirkita-menu', JSON.stringify(products));
     localStorage.setItem('nestbooth-menu-version', menuVersion);
   }
+  // Menu baru tidak boleh memakai resep dari daftar menu lama.
+  recipes.splice(0, recipes.length, ...products.map(() => ({})));
   document.querySelectorAll('.cat').forEach(button => {
     if (!['Semua', 'Minuman'].includes(button.dataset.cat)) button.remove();
   });
