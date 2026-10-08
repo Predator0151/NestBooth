@@ -9,6 +9,7 @@
   };
   const createCloudSale = async order => {
     const result = await api('/api/sales', {method: 'POST', body: JSON.stringify({items: order.items, method: order.method})});
+    setTimeout(loadCloudData, 0);
     return {
       queueNumber: result.queue.queue_number,
       receiptNumber: result.sale.receipt_number,
@@ -22,6 +23,8 @@
     try {
       const data = await api('/api/bootstrap');
       if (!data.products?.length) return;
+      window.nesboothCloudState = data;
+      window.dispatchEvent(new Event('nesbooth-cloud-updated'));
       window.nesboothCloudCreateSale = createCloudSale;
       products.splice(0, products.length, ...data.products.map(product => [product.name, product.category, Number(product.price), 100, '🥤']));
       materials.splice(0, materials.length, ...data.materials.map(material => ({name: material.name, unit: material.unit, stock: Number(material.stock), min: Number(material.min_stock)})));
@@ -41,4 +44,5 @@
   }
   window.nesboothCloudCreateSale = null;
   loadCloudData();
+  setInterval(loadCloudData, 30000);
 })();
