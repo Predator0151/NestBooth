@@ -10,8 +10,13 @@
   const monday = date => { const result = new Date(date); result.setDate(result.getDate() - ((result.getDay() + 6) % 7)); result.setHours(0, 0, 0, 0); return result; };
   function setCard(card, value, note) { card.querySelector('.value').textContent = value; card.querySelector('.up,.muted').textContent = note; }
   function render() {
-    const state = window.nesboothCloudState;
-    if (!state) return;
+    let state = window.nesboothCloudState;
+    if (!state) {
+      try {
+        const sales = JSON.parse(localStorage.getItem('nestbooth-sales-history') || '[]').map(sale => ({...sale, created_at: sale.timestamp}));
+        state = {sales, queues: typeof queue === 'undefined' ? [] : queue};
+      } catch { state = {sales: [], queues: []}; }
+    }
     const cards = [...document.querySelectorAll('#dashboard .dash-grid > .card.stat')];
     if (cards.length < 4) return;
     const now = new Date(), today = dayKey(now), previous = new Date(now); previous.setDate(previous.getDate() - 1);
@@ -36,5 +41,5 @@
     bars.innerHTML = totals.map((total, index) => { const date = new Date(first); date.setDate(first.getDate() + index); return `<div class="bar" title="${labels[index]}: ${money(total)}" style="height:${total ? Math.max(10, Math.round(total / max * 100)) : 4}%;background:${dayKey(date) === today ? 'var(--blue)' : '#dceeff'}"><span>${labels[index]}</span></div>`; }).join('');
   }
   window.addEventListener('nesbooth-cloud-updated', render);
-  render();
+  render(); setInterval(render, 5000);
 })();
