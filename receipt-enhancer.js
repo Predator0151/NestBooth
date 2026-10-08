@@ -86,6 +86,27 @@
     const tax = Math.round(subtotal * 0.11);
     const queueNumber = claimDailyQueueNumber();
     const data = { items: cart.map(entry => ({name: products[entry.i][0] + (entry.variant ? ' — ' + entry.variant : ''), price: entry.unitPrice ?? products[entry.i][2], qty: entry.q})), subtotal, tax, taxPercent: subtotal ? Number(((tax / subtotal) * 100).toFixed(1)) : 0, total: window.orderTotal, method, queueNumber, receiptNumber: 'NB'+Date.now().toString().slice(-6), date: new Date().toLocaleString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) };
+    // Saat POS dibuka dari server online, simpan dahulu ke database.
+    // Fallback lokal tetap tersedia saat server/database belum terhubung.
+    if (typeof window.nesboothCloudCreateSale === 'function') {
+      confirmPay.disabled = true;
+      window.nesboothCloudCreateSale(data).then(remote => {
+        data.queueNumber = remote.queueNumber;
+        data.receiptNumber = remote.receiptNumber;
+        data.subtotal = remote.subtotal;
+        data.tax = remote.tax;
+        data.taxPercent = remote.taxPercent;
+        data.total = remote.total;
+        modalBg.classList.remove('show');
+        queue.push({n: data.queueNumber, name: '', items: data.items.reduce((sum, item) => sum + item.qty, 0) + ' item', status: 'Menunggu'});
+        cart = []; renderCart(); renderQueue();
+        saveSale(data); showReceipt(data);
+        setTimeout(() => { renderDailyTransactions(); renderSixMonthReport(); }, 0);
+        show('Pembayaran berhasil. Nomor antrean ' + data.queueNumber + ' dibuat.');
+      }).catch(error => show(error.message || 'Pembayaran belum dapat disimpan.'))
+        .finally(() => { confirmPay.disabled = false; });
+      return;
+    }
     const originalPush = queue.push;
     queue.push = function (entry) { entry.n = queueNumber; entry.name = ''; return originalPush.call(queue, entry); };
     try { originalPay?.call(confirmPay); } finally { queue.push = originalPush; }

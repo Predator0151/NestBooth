@@ -1,0 +1,12 @@
+{
+  "name": "nesbooth-pos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NesBooth POS dan antrean online",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
