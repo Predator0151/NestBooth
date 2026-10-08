@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kasirkita-pos-v6';
+const CACHE_NAME = 'kasirkita-pos-v7';
 const APP_FILES = [
   './',
   './index.html',
@@ -29,6 +29,18 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  const freshFiles = event.request.mode === 'navigate' || /\.(js|css|html)$/.test(url.pathname);
+  if (freshFiles) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        const copy = response.clone();
+        if (url.origin === self.location.origin) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return response;
+      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
       const copy = response.clone();
